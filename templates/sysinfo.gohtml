@@ -1,0 +1,32 @@
+{{define "title"}}
+Kobo System Info
+{{end}}
+
+{{define "header"}}
+<h1>
+KoboWS
+</h1>
+{{end}}
+
+{{define "body"}}
+  <h2>System Information</h2> <ul>
+    <li>Current time: {{ .Time }}</li>
+    <li>Hostname: {{ .Hostname }}</li>
+    <li>OS: {{ .OS }}</li>
+    <li>Architecture: {{ .Arch }}</li>
+    <li>CPU Count: {{ .NumCPU }}</li>
+    <li>Go Version: {{ .GoVersion }}</li>
+    <li>Goroutines: {{ .NumGoroutines }}</li>
+    <li>User: {{ .User }}</li>
+    <li>Working Directory: {{ .WorkingDir }}</li>
+    <li>Uptime: {{ .Uptime }}</li>
+    <li>PID: {{ .PID }}</li>
+    <li>Memory Allocated: {{ .MemStats.Alloc }} bytes</li>
+    <li>Memory Total Allocated: {{ .MemStats.TotalAlloc }} bytes</li>
+    <li>Memory System: {{ .MemStats.Sys }} bytes</li>
+    <li>Memory Heap Allocated: {{ .MemStats.HeapAlloc }} bytes</li>
+    <li>Memory Heap InUse: {{ .MemStats.HeapInuse }} bytes</li>
+    <li>Memory Heap System: {{ .MemStats.HeapSys }} bytes</li>
+    <li>Garbage Collections: {{ .MemStats.NumGC }}</li>
+  </ul>
+{{end}}

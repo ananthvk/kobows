@@ -1,0 +1,19 @@
+{{define "title"}}
+Kobo FileUploader
+{{end}}
+
+{{define "header"}}
+<h1>
+    KoboWS
+</h1>
+{{end}}
+
+{{define "body"}}
+<div>
+    Welcome to Kobo file uploader !
+</div>
+<form enctype="multipart/form-data" action="/upload" method="post">
+    <input type="file" name="ebook" required/>
+    <input type="submit" value="upload" />
+</form>
+{{end}}

@@ -1,0 +1,12 @@
+{{define "title"}}
+Failed to upload {{.Filename}}
+{{end}}
+
+{{define "header"}}
+      <h1 class="color-error">Error while uploading {{.Filename}}</h1>
+{{end}}
+
+{{define "body"}}
+    <h2>Reason: {{.Error}}</h2>
+    <a href="/">Upload another book!</a>
+{{end}}
