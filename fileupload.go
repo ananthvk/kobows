@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"context"
 	"errors"
 	"html/template"
 	"io"
@@ -8,8 +10,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/pgaskin/kepubify/v4/kepub"
 )
 
 const maxEbookFileSize = 50 * 1000 * 1000 // Max size of 50 MB
@@ -56,37 +60,78 @@ func ebookFileUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write to disk
-	destinationFile, err := getDestinationEpubFile(header.Filename)
+	destinationFile, filePath, err := getDestinationEpubFile(header.Filename)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error("failed to create destination file", "error", err)
 		fileUploadErrorTemplate.ExecuteTemplate(w, "base", map[string]string{"Error": "Internal error"})
+		return
 	}
-	defer destinationFile.Close()
-
 	if _, err := io.Copy(destinationFile, file); err != nil {
+		destinationFile.Close()
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error("failed to copy file", "error", err)
 		fileUploadErrorTemplate.ExecuteTemplate(w, "base", map[string]string{"Error": "Internal error"})
+		return
 	}
-	destinationFile.Sync()
-
+	if err := destinationFile.Sync(); err != nil {
+		destinationFile.Close()
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("failed to sync file", "error", err)
+		fileUploadErrorTemplate.ExecuteTemplate(w, "base", map[string]string{"Error": "Internal error"})
+		return
+	}
+	destinationFile.Close()
 	slog.Info("upload success", "filename", header.Filename, "size", header.Size, "mimeType", header.Header, "from", r.RemoteAddr)
+
+	outputPath, err := convertEpubToKepub(filePath)
+	if err != nil {
+		destinationFile.Close()
+		w.WriteHeader(http.StatusBadRequest)
+		slog.Error("could not convert epub to kepub", "error", err)
+		fileUploadErrorTemplate.ExecuteTemplate(w, "base", map[string]string{"Error": "Could not convert epub to kepub: " + err.Error()})
+		return
+	}
+	slog.Info("converted to kepub", "filename", header.Filename, "size", header.Size, "from", r.RemoteAddr, "finalPath", outputPath, "tempPath", filePath)
+
 	fileUploadSuccessTemplate.ExecuteTemplate(w, "base", map[string]string{"Filename": header.Filename})
 }
 
-func getDestinationEpubFile(filename string) (*os.File, error) {
+func getDestinationEpubFile(filename string) (*os.File, string, error) {
 	filename = filepath.Clean(filename)
 	filename = filepath.Base(filename)
 
 	if !filepath.IsLocal(filename) {
-		return nil, errors.New("invalid filename")
+		return nil, "", errors.New("invalid filename")
 	}
 
-	if filepath.Ext(filename) != ".epub" {
-		filename += ".epub"
-	}
+	filename = strings.TrimSuffix(filename, filepath.Ext(filename))
+	filename += ".tmp"
 
 	destination := filepath.Join(uploadBaseDirectory, filename)
-	return os.Create(destination)
+	f, err := os.Create(destination)
+	return f, destination, err
+}
+
+func convertEpubToKepub(filePath string) (string, error) {
+	defer os.Remove(filePath)
+	converter := kepub.NewConverter()
+	zipReader, err := zip.OpenReader(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer zipReader.Close()
+
+	outputPath := strings.TrimSuffix(filePath, filepath.Ext(filePath)) + ".kepub.epub"
+	outputFile, err := os.Create(outputPath)
+	if err != nil {
+		return "", err
+	}
+	defer outputFile.Close()
+
+	if err := converter.Convert(context.Background(), outputFile, &zipReader.Reader); err != nil {
+		return "", err
+	}
+
+	return outputPath, nil
 }
