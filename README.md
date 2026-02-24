@@ -1,9 +1,11 @@
 # kobows (Kobo Web Server)
 
-A web application that can be run on the Kobo e-reader so that `epub` files can be sent to the device over Wi-Fi, it also converts the `epub` file to a `kepub` file using the [kepubify](https://github.com/pgaskin/kepubify) library for improved perfomrance.
+A web application that can be run on the Kobo e-reader so that `epub` files can be sent to the device over Wi-Fi, it also converts the `epub` file to a `kepub` file using the [kepubify](https://github.com/pgaskin/kepubify) library for improved performance.
 
 
 This application can be useful when you need to transfer an ebook file in a hurry, and you do not have an usb cable / pc nearby
+
+> **Disclaimer:** This project is not affiliated with, endorsed by, or associated with Rakuten Kobo or any official Kobo products in any way.
 
 ---
 
